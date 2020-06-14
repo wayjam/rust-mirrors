@@ -1,41 +1,52 @@
-use structopt::StructOpt;
-use std::path::PathBuf;
-use actix_web::{web, App, HttpRequest, HttpServer, Responder};
+use clap::{value_t, App, Arg, crate_version};
 
-async fn index(_req: HttpRequest) -> impl Responder {
-    "index"
-}
-
-#[derive(StructOpt)]
-struct Opt {
-    /// Activate debug mode
-    #[structopt(short, long)]
-    debug: bool,
-
-    /// Config file
-    #[structopt(short, long, parse(from_os_str))]
-    config: PathBuf,
-
-    /// Port of web server to use
-    #[structopt(short, long, default_value = "8080")]
-    port: u16,
-
-    /// Host of web server to use
-    #[structopt(short, long, default_value = "127.0.0.1")]
-    host: String,
-}
+mod config;
+mod server;
 
 #[actix_rt::main]
 async fn main() -> std::io::Result<()> {
-    let opt = Opt::from_args();
-    let addr = format!("{}:{}", opt.host, opt.port);
-    HttpServer::new(|| {
-        App::new()
-            .route("/", web::get().to(index))
+    let matches = App::new("Rust Mirror")
+        .arg(
+            Arg::with_name("config")
+                .short("c")
+                .long("config")
+                .help("Sets a custom config file")
+                .takes_value(true),
+        )
+        .arg(
+            Arg::with_name("listen_host")
+                .short("h")
+                .long("host")
+                .takes_value(true),
+        )
+        .arg(
+            Arg::with_name("listen_port")
+                .short("p")
+                .long("port")
+                .takes_value(true),
+        )
+        .arg(
+            Arg::with_name("debug")
+                .long("debug")
+                .takes_value(false)
+                .help("activate debug mode"),
+        )
+        .version(crate_version!())
+        .get_matches();
 
-    })
-    .bind(addr)?
-    .run()
-    .await
+    let config_path = matches.value_of("config").unwrap_or("config.json");
+
+    let mut cfg = config::Config::from_file(config_path);
+    cfg.debug = matches.is_present("debug");
+    cfg.host = matches
+        .value_of("listen_host")
+        .unwrap_or("127.0.0.1")
+        .to_string();
+    cfg.port = value_t!(matches, "listen_port", u16).unwrap_or(8080);
+
+    println!("Using Config:{}", config_path);
+
+    let srv = server::new(&cfg);
+
+    srv.await
 }
-

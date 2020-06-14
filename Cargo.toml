@@ -9,5 +9,7 @@ edition = "2018"
 [dependencies]
 actix-rt = "1.1.0"
 actix-web = "2.0.0"
+actix-server = "1.0.2"
 serde_json = "1.0.51"
-structopt = "0.3.13"
+serde = "1.0.111"
+clap = "2.33.1"
