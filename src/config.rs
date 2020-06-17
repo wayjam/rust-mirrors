@@ -2,6 +2,8 @@ extern crate serde_json;
 
 use serde::Deserialize;
 use std::fs;
+use std::fs::File;
+use std::io::BufReader;
 
 #[derive(Deserialize, Default, Debug)]
 struct CratesConfig {
@@ -33,8 +35,10 @@ pub struct Config {
 impl Config {
     pub fn from_file(path: &str) -> Config {
         if fs::metadata(path).is_ok() {
-            let data = fs::read_to_string(path).unwrap();
-            return serde_json::from_str(&data).expect("JSON was not well-formatted");
+            let file = File::open(path).unwrap();
+            let reader = BufReader::new(file);
+
+            return serde_json::from_reader(reader).expect("JSON was not well-formatted")
         } else {
             return Config {
                 debug: true,
