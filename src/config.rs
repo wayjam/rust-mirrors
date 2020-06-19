@@ -33,7 +33,7 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn from_file(path: &str) -> Config {
+    pub fn from_file(path: &str) -> Self {
         if fs::metadata(path).is_ok() {
             let file = File::open(path).unwrap();
             let reader = BufReader::new(file);
@@ -47,5 +47,20 @@ impl Config {
                 ..Config::default()
             };
         }
+    }
+
+    pub fn set_debug(&mut self, debug: bool) -> &Self {
+        self.debug = debug;
+        self
+    }
+
+    pub fn set_host(&mut self, host: &str) -> &mut Self {
+        self.host = host.to_string();
+        self
+    }
+
+    pub fn set_port(&mut self, port: u16) -> &mut Self {
+        self.port = port;
+        self
     }
 }
