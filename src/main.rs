@@ -36,12 +36,13 @@ async fn main() -> std::io::Result<()> {
 
     let config_path = matches.value_of("config").unwrap_or("config.json");
 
-    let cfg = config::Config::from_file(config_path);
-    cfg.set_debug(matches.is_present("debug"));
-        // .set_host(matches
-        // .value_of("listen_host")
-        // .unwrap_or("127.0.0.1"))
-        // .set_port(value_t!(matches, "listen_port", u16).unwrap_or(8080));
+    let cfg = config::Config::from_file(config_path)
+        .set_debug(matches.is_present("debug"))
+        .set_host(matches
+            .value_of("listen_host")
+            .unwrap_or("127.0.0.1"))
+        .set_port(value_t!(matches, "listen_port", u16)
+        .unwrap_or(8080));
 
     println!("Using Config:{}", config_path);
 

@@ -5,7 +5,10 @@ use url::Url;
 
 use crate::config;
 
-async fn index(_req: HttpRequest) -> impl Responder {
+async fn index(_req: HttpRequest,
+    cfg: web::Data<config::Config>,
+    ) -> impl Responder {
+    println!("{}", cfg.get_host());
     "index"
 }
 
@@ -54,12 +57,14 @@ async fn proxy_crate_index(
 }
 
 
-pub fn new(cfg: &config::Config) -> Server {
-    let addr = format!("{}:{}", cfg.host, cfg.port);
+pub fn new(cfg: & config::Config) -> Server {
+    let addr = format!("{}:{}", cfg.get_host(), cfg.get_port());
     println!("listening addr {}", addr);
+    let cfg = cfg.clone();
     let srv = HttpServer::new(|| {
         App::new()
             .data(Client::new())
+            .data(cfg)
             .route("/", web::get().to(index))
             .service(
                 web::scope("/crates.io-index")

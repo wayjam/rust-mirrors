@@ -1,35 +1,37 @@
 extern crate serde_json;
 
 use serde::Deserialize;
+use std::cell::Cell;
+use std::cell::RefCell;
 use std::fs;
 use std::fs::File;
 use std::io::BufReader;
 
 #[derive(Deserialize, Default, Debug)]
 struct CratesConfig {
-    dl: String,
-    api: String,
+    pub dl: String,
+    pub api: String,
 }
 
 #[derive(Deserialize, Default, Debug)]
 struct RustupConfig {
-    upstream: String,
-    origin_prefix: String,
-    proxy_prefix: String,
+    pub upstream: String,
+    pub origin_prefix: String,
+    pub proxy_prefix: String,
 }
 
 #[derive(Deserialize, Default, Debug)]
 pub struct Config {
     #[serde(default)]
-    pub debug: bool,
+    pub debug: Cell<bool>,
     #[serde(default)]
-    pub host: String,
+    host: RefCell<String>,
     #[serde(default)]
-    pub port: u16,
+    pub port: Cell<u16>,
     #[serde(default)]
-    crates: CratesConfig,
+    pub crates: CratesConfig,
     #[serde(default)]
-    rustup: RustupConfig,
+    pub rustup: RustupConfig,
 }
 
 impl Config {
@@ -38,29 +40,38 @@ impl Config {
             let file = File::open(path).unwrap();
             let reader = BufReader::new(file);
 
-            return serde_json::from_reader(reader).expect("JSON was not well-formatted")
+            return serde_json::from_reader(reader).expect("JSON was not well-formatted");
         } else {
             return Config {
-                debug: true,
-                host: String::from("127.0.0.1"),
-                port: 8080,
+                debug: Cell::new(true),
+                host: RefCell::new("127.0.0.1".to_string()),
+                port: Cell::new(8080),
                 ..Config::default()
             };
         }
     }
 
-    pub fn set_debug(&mut self, debug: bool) -> &Self {
-        self.debug = debug;
+    pub fn set_debug(self, debug: bool) -> Self {
+        self.debug.set(debug);
         self
     }
 
-    pub fn set_host(&mut self, host: &str) -> &mut Self {
-        self.host = host.to_string();
+    pub fn set_host(self, host: &str) -> Self {
+        *self.host.borrow_mut() = host.to_string();
         self
     }
 
-    pub fn set_port(&mut self, port: u16) -> &mut Self {
-        self.port = port;
+    pub fn set_port(self, port: u16) -> Self {
+        self.port.set(port);
         self
+    }
+
+    pub fn get_host(self) -> &'static str {
+        let x = self.host.borrow();
+        return "asd";
+    }
+
+    pub fn get_port(self) -> u16 {
+        self.port.get()
     }
 }
