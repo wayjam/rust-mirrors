@@ -3,7 +3,8 @@ use actix_server::{Server};
 
 use crate::config;
 
-async fn index(_req: HttpRequest) -> impl Responder {
+async fn index(cfg: web::Data<config::Config>) -> impl Responder {
+    println!("{}", cfg.port);
     "index"
 }
 
@@ -11,13 +12,26 @@ async fn configjson(_req: HttpRequest) -> impl Responder {
     "config.json"
 }
 
+async fn rustup(_req: HttpRequest) -> impl Responder {
+    "rustup"
+}
 
-pub fn new(cfg: &config::Config) -> Server {
+pub fn new(cfg: config::Config) -> Server {
     let addr = format!("{}:{}", cfg.host, cfg.port);
-    let srv = HttpServer::new(|| {
+    println!("listening addr {}", addr);
+
+    let srv = HttpServer::new(move || {
+        let cfg = cfg.clone();
         App::new()
+            .data(cfg)
             .route("/", web::get().to(index))
-            .route("/config.json", web::get().to(configjson))
+            .service(
+                web::scope("/crates.io-index")
+                    .route("/config.json", web::get().to(configjson))
+            )
+            .service(
+                web::scope("/rustup")
+            )
 
     })
     .bind(addr);
